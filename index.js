@@ -116,7 +116,7 @@ app.message(/^(r|remove)$/i, async ({ message, context, say, client }) => {
 });
 
 // ⏭️ Skip command
-app.message(/^(s|skip)$/i, async ({ message, context, say, client }) => {
+app.message(/^(p|pass)$/i, async ({ message, context, say, client }) => {
   const userId =  message.user;
   const channelId = message.channel;
   let queue = getQueue(channelId);
@@ -135,7 +135,7 @@ app.message(/^(s|skip)$/i, async ({ message, context, say, client }) => {
 });
 
 // 📋 Queue status (manual check)
-app.message(/^status$/i, async ({ message, say, client }) => {
+app.message(/^s|status$/i, async ({ message, say, client }) => {
   const queueStatus = await formatQueueStatus(message.channel, client);
   await say(queueStatus);
 });
