@@ -33,7 +33,7 @@ function formatQueueStatus(channelId) {
   const onCall = `<@${queue[0]}>`;
   const nextUp = queue[1] ? `<@${queue[1]}>` : 'N/A';
 
-  return `📢 ${onCall} is on call, ${nextUp} will be next.\n\n📋 *Current Queue:*\n${statusLines}`;
+  return `${onCall} is on call, ${nextUp} will be next.\n\n📋 *Current Queue:*\n${statusLines}`;
 }
 
 // ✅ Lead command
@@ -57,11 +57,11 @@ app.message(/^(l|lead)$/i, async ({ message, say, client }) => {
   queue.push(queue.shift());
   setQueue(channelId, queue);
 
-  await say(`✅ <@${user}> has claimed a lead.\n${formatQueueStatus(channelId)}`);
+  await say(`<@${user}> has claimed a lead.\n${formatQueueStatus(channelId)}`);
 });
 
 // ➕ Add command
-app.message(/^add <@(\w+)>$/i, async ({ message, context, say }) => {
+app.message(/^(a|add)$/i, async ({ message, context, say }) => {
   const userId = context.matches[1];
   const channelId = message.channel;
   let queue = getQueue(channelId);
@@ -73,11 +73,11 @@ app.message(/^add <@(\w+)>$/i, async ({ message, context, say }) => {
 
   queue.push(userId);
   setQueue(channelId, queue);
-  await say(`➕ Added <@${userId}> to the queue.\n${formatQueueStatus(channelId)}`);
+  await say(`Added <@${userId}> to the queue.\n${formatQueueStatus(channelId)}`);
 });
 
 // ➖ Remove command
-app.message(/^remove <@(\w+)>$/i, async ({ message, context, say }) => {
+app.message(/^(r|remove)$/i, async ({ message, context, say }) => {
   const userId = context.matches[1];
   const channelId = message.channel;
   let queue = getQueue(channelId);
@@ -89,11 +89,11 @@ app.message(/^remove <@(\w+)>$/i, async ({ message, context, say }) => {
 
   queue = queue.filter(id => id !== userId);
   setQueue(channelId, queue);
-  await say(`➖ Removed <@${userId}> from the queue.\n${formatQueueStatus(channelId)}`);
+  await say(`Removed <@${userId}> from the queue.\n${formatQueueStatus(channelId)}`);
 });
 
 // ⏭️ Skip command
-app.message(/^skip <@(\w+)>$/i, async ({ message, context, say }) => {
+app.message(/^(s|skip)$/i, async ({ message, context, say }) => {
   const userId = context.matches[1];
   const channelId = message.channel;
   let queue = getQueue(channelId);
@@ -108,11 +108,11 @@ app.message(/^skip <@(\w+)>$/i, async ({ message, context, say }) => {
   queue.push(userId);
   setQueue(channelId, queue);
 
-  await say(`⏭️ <@${userId}> has been skipped.\n${formatQueueStatus(channelId)}`);
+  await say(`<@${userId}> has been skipped.\n${formatQueueStatus(channelId)}`);
 });
 
 // 📋 Queue status (manual check)
-app.message(/^queue$/i, async ({ message, say }) => {
+app.message(/^status$/i, async ({ message, say }) => {
   await say(formatQueueStatus(message.channel));
 });
 
