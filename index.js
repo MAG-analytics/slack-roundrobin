@@ -57,16 +57,20 @@ app.message(/^(l|lead)$/i, async ({ message, say, client }) => {
       })
     );
 
-    const plainQueue = nameList.join(" → ");
+    // Create numbered list string for the queue
+    const plainQueue = nameList
+      .map((name, idx) => `${idx + 1}. ${name}`)
+      .join('\n');
 
     await say(
-      `<@${user}> has claimed a lead.\n${next1}, it’s your turn. ${next2}, you will be next.\n\n📋 *Lead Queue*: ${plainQueue}`
+      `<@${user}> has claimed a lead.\n${next1}, it’s your turn. ${next2}, you will be next.\n\n📋 *Lead Queue:*\n${plainQueue}`
     );
   } catch (error) {
     console.error("Error handling lead message:", error);
     await say("Oops! Something went wrong while handling the lead.");
   }
 });
+
 
 app.message(/^(r|remove)$/i, async ({ message, say, client }) => {
   const user = message.user;
