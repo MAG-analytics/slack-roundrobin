@@ -100,19 +100,28 @@ app.message(/^(a|add)$/i, async ({ message, say, client }) => {
 
 app.message(/^(s|skip)$/i, async ({ message, say, client }) => {
   const user = message.user;
+  const channel = message.channel;
+  const ts = message.ts;
+
   console.log(`Skip handler triggered by user: ${user}`);
 
-  await react({ client, channel: message.channel, ts: message.ts });
 
-  if (user !== queue[0]) {
-    await say(`<@${user}>, only the person on duty (<@${queue[0]}>) can skip their turn.`);
+  await react({ client, channel, ts });
+
+  const index = queue.indexOf(user);
+
+  if (index === -1) {
+    await say(`<@${user}>, you are not currently in the queue.`);
     return;
   }
 
-  queue.push(queue.shift());
+  // Remove user from current position and push to the end
+  queue.splice(index, 1);
+  queue.push(user);
 
-  await say(`<@${user}> skipped the round and was placed at the end of the queue.`);
+  await say(`<@${user}> skipped the round and was moved to the end of the queue.`);
 });
+
 
 app.message(/^status$/i, async ({ message, say, client }) => {
   console.log(`Status handler triggered by user: ${message.user}`);
