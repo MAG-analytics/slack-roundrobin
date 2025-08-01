@@ -38,7 +38,9 @@ function formatQueueStatus(channelId) {
 app.message(/^(l|lead)$/i, async ({ message, say, client }) => {
   const user = message.user;
   const channelId = message.channel;
+  console.log(`Lead command triggered by user: ${user} in channel: ${channelId}`);
   let queue = getQueue(channelId);
+  console.log(`Current queue for channel ${channelId}:`, queue);
 
   if (!queue.includes(user)) {
     await say(`<@${user}>, you're not in the queue for this channel.`);
@@ -111,3 +113,8 @@ app.message(/^skip <@(\w+)>$/i, async ({ message, context, say }) => {
 app.message(/^queue$/i, async ({ message, say }) => {
   await say(formatQueueStatus(message.channel));
 });
+
+(async () => {
+  await app.start(process.env.PORT || 3000);
+  console.log('⚡️ Slack Bot is running!');
+})();
