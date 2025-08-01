@@ -37,6 +37,7 @@ async function formatQueueStatus(channelId, client) {
     queue.map(async (userId) => {
       try {
         const res = await client.users.info({ user: userId });
+        console.log(`Fetched user info for ${userId}:`, res);
         return res.user?.real_name || res.user?.name || userId;
       } catch (e) {
         console.error(`Failed to fetch name for ${userId}:`, e);
