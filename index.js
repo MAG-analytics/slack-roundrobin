@@ -11,10 +11,12 @@ const app = new App({
 const allowedClearUsers = ['U06KSH5H8FR', 'U014NGAJTFT', 'U013V5LEG3Z', 'U0149TEARJ6'];
 
 const queues = {
-  'C098F2EGUL9': ['U06KSH5H8FR', 'U014NGAJTFT','U013V5LEG3Z', 'U0149TEARJ6'],   // shift-1 (channel ID)
+  'C098LBR46LA': ['U02MPNMK49L', 'U08BJ2X1YQ3','U08KBSDRW6P', 'U085ERNB35J','U05D7PCN1RU','U05CZQWARFZ','U01HBSPDGUC','U03K5ETN0G0','U06CZ9UUXUG'],   // shift-1 (channel ID)
   'C0990B8428Z': ['U013V5LEG3Z', 'U0149TEARJ6']   // shift-2 (channel ID)
   //'C03KLMNO789': ['U01ABCDEF12', 'U01GHIJKL34']    // after-hour (channel ID)
 };
+
+
 
 // Helper to get queue for the current channel
 function getQueue(channelId) {
