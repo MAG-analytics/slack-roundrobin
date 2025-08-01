@@ -8,8 +8,10 @@ const app = new App({
   socketMode: true
 });
 
+const allowedClearUsers = ['U06KSH5H8FR', 'U014NGAJTFT', 'U013V5LEG3Z', 'U0149TEARJ6'];
+
 const queues = {
-  'C098F2EGUL9': ['U06KSH5H8FR', 'U014NGAJTFT'],   // shift-1 (channel ID)
+  'C098F2EGUL9': ['U06KSH5H8FR', 'U014NGAJTFT','U013V5LEG3Z', 'U0149TEARJ6'],   // shift-1 (channel ID)
   'C0990B8428Z': ['U013V5LEG3Z', 'U0149TEARJ6']   // shift-2 (channel ID)
   //'C03KLMNO789': ['U01ABCDEF12', 'U01GHIJKL34']    // after-hour (channel ID)
 };
@@ -62,7 +64,7 @@ app.message(/^(l|lead)$/i, async ({ message, say, client }) => {
 
 // ➕ Add command
 app.message(/^(a|add)$/i, async ({ message, context, say }) => {
-  const userId = context.matches[1];
+  const userId = message.user;
   const channelId = message.channel;
   let queue = getQueue(channelId);
 
@@ -78,7 +80,7 @@ app.message(/^(a|add)$/i, async ({ message, context, say }) => {
 
 // ➖ Remove command
 app.message(/^(r|remove)$/i, async ({ message, context, say }) => {
-  const userId = context.matches[1];
+  const userId =  message.user;
   const channelId = message.channel;
   let queue = getQueue(channelId);
 
@@ -94,7 +96,7 @@ app.message(/^(r|remove)$/i, async ({ message, context, say }) => {
 
 // ⏭️ Skip command
 app.message(/^(s|skip)$/i, async ({ message, context, say }) => {
-  const userId = context.matches[1];
+  const userId =  message.user;
   const channelId = message.channel;
   let queue = getQueue(channelId);
 
@@ -114,6 +116,26 @@ app.message(/^(s|skip)$/i, async ({ message, context, say }) => {
 // 📋 Queue status (manual check)
 app.message(/^status$/i, async ({ message, say }) => {
   await say(formatQueueStatus(message.channel));
+});
+
+// 🧹 Clear command
+app.message(/^clear$/i, async ({ message, say }) => {
+  const userId = message.user;
+  const channelId = message.channel;
+
+  if (!allowedClearUsers.includes(userId)) {
+    await say(`<@${userId}> you are not authorized to clear the queue.`);
+    return;
+  }
+
+  let queue = getQueue(channelId);
+  if (!queue || queue.length === 0) {
+    await say(`The queue is already empty.`);
+    return;
+  }
+
+  setQueue(channelId, []); // Empty the queue
+  await say(`Queue has been cleared by <@${userId}>.`);
 });
 
 (async () => {
