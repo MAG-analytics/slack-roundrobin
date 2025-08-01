@@ -1,142 +1,113 @@
 const { App } = require('@slack/bolt');
 
+// Initialize your app
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
-  appToken: process.env.SLACK_APP_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  socketMode: true
 });
 
-let queue = ['U06KSH5H8FR', 'U014NGAJTFT', 'U013V5LEG3Z', 'U0149TEARJ6'];
+const queues = {
+  'C098F2EGUL9': ['U06KSH5H8FR', 'U014NGAJTFT'],   // shift-1 (channel ID)
+  'C0990B8428Z': ['U013V5LEG3Z', 'U0149TEARJ6']   // shift-2 (channel ID)
+  //'C03KLMNO789': ['U01ABCDEF12', 'U01GHIJKL34']    // after-hour (channel ID)
+};
 
-async function react({ client, channel, ts, name = 'white_check_mark' }) {
-  try {
-    await client.reactions.add({
-      channel,
-      name,
-      timestamp: ts
-    });
-  } catch (err) {
-    console.error('Failed to add reaction:', err.data?.error || err.message);
-  }
+// Helper to get queue for the current channel
+function getQueue(channelId) {
+  return queues[channelId] || [];
 }
 
+// Helper to set updated queue
+function setQueue(channelId, newQueue) {
+  queues[channelId] = newQueue;
+}
+
+// Helper to format queue status
+function formatQueueStatus(channelId) {
+  const queue = getQueue(channelId);
+  if (queue.length === 0) return 'Queue is empty.';
+
+  const statusLines = queue.map((userId, i) => `${i + 1}. <@${userId}>`).join('\n');
+  const onCall = `<@${queue[0]}>`;
+  const nextUp = queue[1] ? `<@${queue[1]}>` : 'N/A';
+
+  return `📢 ${onCall} is on call, ${nextUp} will be next.\n\n📋 *Current Queue:*\n${statusLines}`;
+}
+
+// ✅ Lead command
 app.message(/^(l|lead)$/i, async ({ message, say, client }) => {
   const user = message.user;
-  const channel = message.channel;
-  const ts = message.ts;
-
-  console.log(`Lead handler triggered by user: ${user}`);
-
-  try {
-    // React to the message
-    await react({ client, channel, ts });
-
-    if (user !== queue[0]) {
-      await say(`<@${user}>, it's not your turn yet! <@${queue[0]}> is on duty.`);
-      return;
-    }
-
-    // Rotate the queue
-    queue.push(queue.shift());
-
-    // Build mention list
-    const next1 = queue[0] ? `<@${queue[0]}>` : 'N/A';
-    const next2 = queue[1] ? `<@${queue[1]}>` : 'N/A';
-
-    // Get plain-text names (usernames or real names)
-    const nameList = await Promise.all(
-      queue.map(async (userId) => {
-        try {
-          const res = await client.users.info({ user: userId });
-          return res.user?.real_name || res.user?.name || userId;
-        } catch (e) {
-          console.error(`Failed to fetch name for ${userId}:`, e);
-          return userId;
-        }
-      })
-    );
-
-    // Create numbered list string for the queue
-    const plainQueue = nameList
-      .map((name, idx) => `${idx + 1}. ${name}`)
-      .join('\n');
-
-    await say(
-      `<@${user}> has claimed a lead.\n${next1}, it’s your turn. ${next2}, you will be next.\n\n📋 *Lead Queue:*\n${plainQueue}`
-    );
-  } catch (error) {
-    console.error("Error handling lead message:", error);
-    await say("Oops! Something went wrong while handling the lead.");
-  }
-});
-
-
-app.message(/^(r|remove)$/i, async ({ message, say, client }) => {
-  const user = message.user;
-  console.log(`Remove handler triggered by user: ${user}`);
-
-  await react({ client, channel: message.channel, ts: message.ts });
+  const channelId = message.channel;
+  let queue = getQueue(channelId);
 
   if (!queue.includes(user)) {
-    await say(`<@${user}>, you're not currently in the queue.`);
+    await say(`<@${user}>, you're not in the queue for this channel.`);
     return;
   }
 
-  queue = queue.filter(u => u !== user);
-  await say(`<@${user}> has been removed from the queue.`);
-});
-
-app.message(/^(a|add)$/i, async ({ message, say, client }) => {
-  const user = message.user;
-  console.log(`Add handler triggered by user: ${user}`);
-
-  await react({ client, channel: message.channel, ts: message.ts });
-
-  if (queue.includes(user)) {
-    await say(`<@${user}>, you're already in the queue.`);
+  if (user !== queue[0]) {
+    await say(`<@${user}>, it's not your turn yet! <@${queue[0]}> is on duty.`);
     return;
   }
 
-  queue.push(user);
-  await say(`<@${user}> has been added to the end of the queue.`);
+  queue.push(queue.shift());
+  setQueue(channelId, queue);
+
+  await say(`✅ <@${user}> has claimed a lead.\n${formatQueueStatus(channelId)}`);
 });
 
-app.message(/^(s|skip)$/i, async ({ message, say, client }) => {
-  const user = message.user;
-  const channel = message.channel;
-  const ts = message.ts;
+// ➕ Add command
+app.message(/^add <@(\w+)>$/i, async ({ message, context, say }) => {
+  const userId = context.matches[1];
+  const channelId = message.channel;
+  let queue = getQueue(channelId);
 
-  console.log(`Skip handler triggered by user: ${user}`);
-
-
-  await react({ client, channel, ts });
-
-  const index = queue.indexOf(user);
-
-  if (index === -1) {
-    await say(`<@${user}>, you are not currently in the queue.`);
+  if (queue.includes(userId)) {
+    await say(`<@${userId}> is already in the queue.`);
     return;
   }
 
-  // Remove user from current position and push to the end
-  queue.splice(index, 1);
-  queue.push(user);
-
-  await say(`<@${user}> skipped the round and was moved to the end of the queue.`);
+  queue.push(userId);
+  setQueue(channelId, queue);
+  await say(`➕ Added <@${userId}> to the queue.\n${formatQueueStatus(channelId)}`);
 });
 
+// ➖ Remove command
+app.message(/^remove <@(\w+)>$/i, async ({ message, context, say }) => {
+  const userId = context.matches[1];
+  const channelId = message.channel;
+  let queue = getQueue(channelId);
 
-app.message(/^status$/i, async ({ message, say, client }) => {
-  console.log(`Status handler triggered by user: ${message.user}`);
+  if (!queue.includes(userId)) {
+    await say(`<@${userId}> is not in the queue.`);
+    return;
+  }
 
-  await react({ client, channel: message.channel, ts: message.ts });
-
-  const queueStatus = queue.map((userId, index) => `${index + 1}. <@${userId}>`).join('\n');
-  await say(`📋 Current queue:\n${queueStatus}`);
+  queue = queue.filter(id => id !== userId);
+  setQueue(channelId, queue);
+  await say(`➖ Removed <@${userId}> from the queue.\n${formatQueueStatus(channelId)}`);
 });
 
-(async () => {
-  await app.start(process.env.PORT || 3000);
-  console.log('⚡️ Slack Bot is running!');
-})();
+// ⏭️ Skip command
+app.message(/^skip <@(\w+)>$/i, async ({ message, context, say }) => {
+  const userId = context.matches[1];
+  const channelId = message.channel;
+  let queue = getQueue(channelId);
+
+  if (!queue.includes(userId)) {
+    await say(`<@${userId}> is not in the queue.`);
+    return;
+  }
+
+  // Move the user to the end
+  queue = queue.filter(id => id !== userId);
+  queue.push(userId);
+  setQueue(channelId, queue);
+
+  await say(`⏭️ <@${userId}> has been skipped.\n${formatQueueStatus(channelId)}`);
+});
+
+// 📋 Queue status (manual check)
+app.message(/^queue$/i, async ({ message, say }) => {
+  await say(formatQueueStatus(message.channel));
+});
