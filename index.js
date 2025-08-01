@@ -37,8 +37,8 @@ async function formatQueueStatus(channelId, client) {
     queue.map(async (userId) => {
       try {
         const res = await client.users.info({ user: userId });
-        console.log(`Fetched user info for ${userId}:`, res);
-        return res.user?.real_name || res.user?.name || userId;
+        console.log(`Fetched user info for ${userId}:`, res.user.real_name);
+        return res.user.real_name;
       } catch (e) {
         console.error(`Failed to fetch name for ${userId}:`, e);
         return userId;
@@ -81,7 +81,7 @@ app.message(/^(l|lead)$/i, async ({ message, say, client }) => {
 });
 
 // ➕ Add command
-app.message(/^(a|add)$/i, async ({ message, context, say }) => {
+app.message(/^(a|add)$/i, async ({ message, context, say, client }) => {
   const userId = message.user;
   const channelId = message.channel;
   let queue = getQueue(channelId);
@@ -97,7 +97,7 @@ app.message(/^(a|add)$/i, async ({ message, context, say }) => {
 });
 
 // ➖ Remove command
-app.message(/^(r|remove)$/i, async ({ message, context, say }) => {
+app.message(/^(r|remove)$/i, async ({ message, context, say, client }) => {
   const userId =  message.user;
   const channelId = message.channel;
   let queue = getQueue(channelId);
@@ -113,7 +113,7 @@ app.message(/^(r|remove)$/i, async ({ message, context, say }) => {
 });
 
 // ⏭️ Skip command
-app.message(/^(s|skip)$/i, async ({ message, context, say }) => {
+app.message(/^(s|skip)$/i, async ({ message, context, say, client }) => {
   const userId =  message.user;
   const channelId = message.channel;
   let queue = getQueue(channelId);
@@ -132,7 +132,7 @@ app.message(/^(s|skip)$/i, async ({ message, context, say }) => {
 });
 
 // 📋 Queue status (manual check)
-app.message(/^status$/i, async ({ message, say }) => {
+app.message(/^status$/i, async ({ message, say, client }) => {
   await say(formatQueueStatus(message.channel,client));
 });
 
