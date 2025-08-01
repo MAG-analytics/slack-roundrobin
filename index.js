@@ -26,16 +26,33 @@ function setQueue(channelId, newQueue) {
   queues[channelId] = newQueue;
 }
 
-// Helper to format queue status
-function formatQueueStatus(channelId) {
+// Helper to format queue status (only @ first two)
+// Helper to format queue status (mention only first two, plain names in list)
+async function formatQueueStatus(channelId, client) {
   const queue = getQueue(channelId);
   if (queue.length === 0) return 'Queue is empty.';
 
-  const statusLines = queue.map((userId, i) => `${i + 1}. <@${userId}>`).join('\n');
-  const onCall = `<@${queue[0]}>`;
-  const nextUp = queue[1] ? `<@${queue[1]}>` : 'N/A';
+  // Fetch display names
+  const nameList = await Promise.all(
+    queue.map(async (userId) => {
+      try {
+        const res = await client.users.info({ user: userId });
+        return res.user?.real_name || res.user?.name || userId;
+      } catch (e) {
+        console.error(`Failed to fetch name for ${userId}:`, e);
+        return userId;
+      }
+    })
+  );
 
-  return `${onCall} is on call, ${nextUp} will be next.\n\n📋 *Current Queue:*\n${statusLines}`;
+  const onCallMention = `<@${queue[0]}>`;
+  const nextMention = queue[1] ? `<@${queue[1]}>` : 'N/A';
+
+  const plainQueueList = nameList
+    .map((name, i) => `${i + 1}. ${name}`)
+    .join('\n');
+
+  return `${onCallMention} is on call, ${nextMention} will be next.\n\n📋 *Current Queue:*\n${plainQueueList}`;
 }
 
 // ✅ Lead command
