@@ -77,7 +77,8 @@ app.message(/^(l|lead)$/i, async ({ message, say, client }) => {
   queue.push(queue.shift());
   setQueue(channelId, queue);
 
-  await say(`<@${user}> has claimed a lead.\n${formatQueueStatus(channelId,client)}`);
+  const queueStatus = await formatQueueStatus(channelId, client);
+  await say(`<@${user}> has claimed a lead.\n${queueStatus}`);
 });
 
 // ➕ Add command
@@ -93,7 +94,8 @@ app.message(/^(a|add)$/i, async ({ message, context, say, client }) => {
 
   queue.push(userId);
   setQueue(channelId, queue);
-  await say(`Added <@${userId}> to the queue.\n${formatQueueStatus(channelId,client)}`);
+  const queueStatus = await formatQueueStatus(channelId, client);
+  await say(`Added <@${userId}> to the queue.\n${queueStatus}`);
 });
 
 // ➖ Remove command
@@ -109,7 +111,8 @@ app.message(/^(r|remove)$/i, async ({ message, context, say, client }) => {
 
   queue = queue.filter(id => id !== userId);
   setQueue(channelId, queue);
-  await say(`Removed <@${userId}> from the queue.\n${formatQueueStatus(channelId,client)}`);
+  const queueStatus = await formatQueueStatus(channelId, client);
+  await say(`Removed <@${userId}> from the queue.\n${queueStatus}`);
 });
 
 // ⏭️ Skip command
@@ -127,13 +130,14 @@ app.message(/^(s|skip)$/i, async ({ message, context, say, client }) => {
   queue = queue.filter(id => id !== userId);
   queue.push(userId);
   setQueue(channelId, queue);
-
-  await say(`<@${userId}> has been skipped.\n${formatQueueStatus(channelId,client)}`);
+  const queueStatus = await formatQueueStatus(channelId, client);
+  await say(`<@${userId}> has been skipped.\n${queueStatus}`);
 });
 
 // 📋 Queue status (manual check)
 app.message(/^status$/i, async ({ message, say, client }) => {
-  await say(formatQueueStatus(message.channel,client));
+  const queueStatus = await formatQueueStatus(message.channel, client);
+  await say(queueStatus);
 });
 
 // 🧹 Clear command
