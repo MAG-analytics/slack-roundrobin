@@ -162,6 +162,69 @@ app.message(/^clear$/i, async ({ message, say }) => {
   await say(`Queue has been cleared by <@${userId}>.`);
 });
 
+// 🔧 Admin remove by mention command (e.g. "remove @user")
+app.message(/^remove\s+<@([A-Z0-9]+)>/i, async ({ message, context, say, client }) => {
+  const adminUserId = message.user;
+  const channelId = message.channel;
+  const matches = message.text.match(/^remove\s+<@([A-Z0-9]+)>/i);
+  const targetUserId = matches?.[1];
+
+  if (!allowedClearUsers.includes(adminUserId)) {
+    await say(`<@${adminUserId}>, you are not authorized to remove others from the queue.`);
+    return;
+  }
+
+  if (!targetUserId) {
+    await say(`Please mention a valid user to remove.`);
+    return;
+  }
+
+  let queue = getQueue(channelId);
+  if (!queue.includes(targetUserId)) {
+    await say(`<@${targetUserId}> is not in the queue.`);
+    return;
+  }
+
+  queue = queue.filter(id => id !== targetUserId);
+  setQueue(channelId, queue);
+
+  const queueStatus = await formatQueueStatus(channelId, client);
+  await say(`<@${targetUserId}> has been removed from the queue by <@${adminUserId}>.\n${queueStatus}`);
+});
+
+// 🔧 Admin pass by mention command (e.g. "pass @user")
+app.message(/^pass\s+<@([A-Z0-9]+)>/i, async ({ message, context, say, client }) => {
+  const adminUserId = message.user;
+  const channelId = message.channel;
+  const matches = message.text.match(/^pass\s+<@([A-Z0-9]+)>/i);
+  const targetUserId = matches?.[1];
+
+  if (!allowedClearUsers.includes(adminUserId)) {
+    await say(`<@${adminUserId}>, you are not authorized to skip others in the queue.`);
+    return;
+  }
+
+  if (!targetUserId) {
+    await say(`Please mention a valid user to pass.`);
+    return;
+  }
+
+  let queue = getQueue(channelId);
+  if (!queue.includes(targetUserId)) {
+    await say(`<@${targetUserId}> is not in the queue.`);
+    return;
+  }
+
+  // Move the target user to the end
+  queue = queue.filter(id => id !== targetUserId);
+  queue.push(targetUserId);
+  setQueue(channelId, queue);
+
+  const queueStatus = await formatQueueStatus(channelId, client);
+  await say(`<@${targetUserId}> has been skipped by <@${adminUserId}>.\n${queueStatus}`);
+});
+
+
 (async () => {
   await app.start(process.env.PORT || 3000);
   console.log('⚡️ Slack Bot is running!');
